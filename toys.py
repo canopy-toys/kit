@@ -7,6 +7,7 @@
     ./toys.py setup toy-calc     create the repository if needed, seed it once, and apply its settings
     ./toys.py reset toy-calc     back to the seed: PRs closed, agent/ branches gone, main forced, catalog recreated
     ./toys.py reset all
+    ./toys.py install            copy the toy config root and workspace map under ~/canopy-toys, never overwriting
 
 Standard library only. Every GitHub call goes through `gh`.
 """
@@ -29,13 +30,18 @@ ORG: str = CONFIG["org"]
 RULESET = "main"
 SEED_TAG = "seed"
 BRANCH_PREFIX = "agent/"
+# Where the toys run from: XDG_CONFIG_HOME=~/canopy-toys/config, and the workspace beside it.
+HOME = pathlib.Path.home() / "canopy-toys"
 
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("command", choices=["setup", "reset"])
-    parser.add_argument("repo", help="a toy repository, such as toy-calc, or all")
+    parser.add_argument("command", choices=["setup", "reset", "install"])
+    parser.add_argument("repo", nargs="?", default="all", help="a toy repository, such as toy-calc, or all")
     args = parser.parse_args()
+    if args.command == "install":
+        install()
+        return 0
     repos = toy_repos() if args.repo == "all" else [args.repo]
     for repo in repos:
         if repo not in toy_repos():
@@ -49,6 +55,19 @@ def main() -> int:
 
 def toy_repos() -> list[str]:
     return sorted(p.name for p in (KIT / "templates").iterdir() if p.is_dir() and p.name != "common")
+
+
+def install() -> None:
+    """Copy config/ to ~/canopy-toys/config and workspace/ to ~/canopy-toys/workspace, keeping files already there."""
+    for source, dest in ((KIT / "config", HOME / "config"), (KIT / "workspace", HOME / "workspace")):
+        for path in sorted(p for p in source.rglob("*") if p.is_file()):
+            target = dest / path.relative_to(source)
+            if target.exists():
+                log(f"{target}: already there, kept")
+                continue
+            target.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(path, target)
+            log(f"{target}: installed")
 
 
 def setup(repo: str) -> None:
@@ -183,7 +202,6 @@ def configure(repo: str) -> None:
     for name, color, description in (
         (CONFIG["queue_label"], "0e8a16", "The toy queue: canopy may start this"),
         (CONFIG["needs_human_label"], "d93f0b", "Waiting on a person"),
-        (CONFIG["pr_label"], "5319e7", "Opened by canopy"),
     ):
         gh("label", "create", name, "-R", full, "--color", color, "--description", description, "--force")
     ruleset = {

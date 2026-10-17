@@ -1,0 +1,16 @@
+# The toy workspace's map. Install with ./toys.py install, which copies it to ~/canopy-toys/workspace.
+
+[workspace]
+name = "canopy-toys"
+
+[repos.toy-calc]
+url = "https://github.com/canopy-toys/toy-calc.git"
+summary = "A tiny stdlib Python CLI calculator: ops, format, and cli modules, unittest tests, a CHANGELOG."
+
+[tracker]
+provider = "github"
+needs_human_label = "needs-human"
+query = "org:canopy-toys is:issue is:open"
+
+[trust]
+branch_prefix = "agent/"

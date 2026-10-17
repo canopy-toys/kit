@@ -1,0 +1,15 @@
+// The toy OpenCode config: its GitHub MCP server uses the toy token, which reaches the canopy-toys org and nothing
+// else. The token is the file beside this one, github-token, which the operator writes and the kit never holds.
+{
+  "$schema": "https://opencode.ai/config.json",
+  "mcp": {
+    "github": {
+      "type": "remote",
+      "url": "https://api.githubcopilot.com/mcp/",
+      "enabled": true,
+      "headers": {
+        "Authorization": "Bearer {file:~/canopy-toys/config/opencode/github-token}"
+      }
+    }
+  }
+}

@@ -1,0 +1,27 @@
+# The toy user config: XDG_CONFIG_HOME=~/canopy-toys/config, so it serves only the toy workspace. Kept cheap.
+
+[tracker]
+labels = ["agent-ready-ejones-toy"]
+
+[capacity]
+max_workers = 1
+max_chores = 0
+
+[runtime]
+# The overseer keeps the default model, since its judgment is what the scenarios test; workers and the splitter run a
+# cheaper one.
+overseer_cmd = '''env OPENCODE_CONFIG_DIR={definitions_dir} opencode run --agent canopy-overseer --format json
+    --title={title} {prompt}'''
+worker_cmd   = '''env OPENCODE_CONFIG_DIR={definitions_dir} opencode run --agent canopy-worker --format json
+    --model github-copilot/claude-haiku-5.5 --title={title} {prompt}'''
+split_cmd    = '''env OPENCODE_CONFIG_DIR={definitions_dir} opencode run --agent canopy-splitter --format json
+    --model github-copilot/claude-haiku-5.5 --title={title} {prompt}'''
+overseer_timeout_minutes = 15
+worker_timeout_minutes = 30
+
+[loop]
+interval_minutes = 30
+
+[trust]
+authorized_repliers = ["eddie-on-gh"]
+trusted_reviewers = ["eddie-on-gh"]
