@@ -14,3 +14,7 @@ query = "repo:canopy-toys/toy-calc is:issue is:open"
 
 [trust]
 branch_prefix = "agent/"
+
+[policy]
+# Short, so S9 reaches its attempt limit in minutes rather than an hour.
+fix_ci_cooldown_minutes = 5
