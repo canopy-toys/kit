@@ -10,7 +10,7 @@ summary = "A tiny stdlib Python CLI calculator: ops, format, and cli modules, un
 [tracker]
 provider = "github"
 needs_human_label = "needs-human"
-query = "org:canopy-toys is:issue is:open"
+query = "repo:canopy-toys/toy-calc is:issue is:open"
 
 [trust]
 branch_prefix = "agent/"
