@@ -24,4 +24,7 @@ export XDG_CONFIG_HOME="$HOME/canopy-toys/config"
 exec uv run -q --project "$HOME/workspace/eddieland/canopy" canopy "$@"
 ```
 
+The wrapper serves the web UI from the checkout's `ui/dist`, however old: run `make ui-build` there after pulling
+main (eddieland/canopy#635).
+
 Then, from `~/canopy-toys/workspace`: `toycanopy workspace sync`, `toycanopy tick --dry-run`, `toycanopy tick`.
