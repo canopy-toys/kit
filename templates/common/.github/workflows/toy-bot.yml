@@ -1,0 +1,58 @@
+# The reviewer canopy does not trust, played by github-actions[bot]. Only someone with write access can dispatch it:
+#   gh workflow run toy-bot.yml -R canopy-toys/toy-calc -f pr=12 -f action=approve
+#   gh workflow run toy-bot.yml -R canopy-toys/toy-calc -f pr=12 -f action=comment -f path=calc/cli.py -f line=10 \
+#     -f body='Rename x to total.'
+name: toy-bot
+on:
+  workflow_dispatch:
+    inputs:
+      pr:
+        description: Pull request number
+        required: true
+      action:
+        description: What the bot does
+        required: true
+        type: choice
+        options: [comment, review, approve]
+      body:
+        description: The comment or review text
+        default: Looks good to me.
+      path:
+        description: For comment, the file to comment on
+        default: ""
+      line:
+        description: For comment, the line in the PR's version of that file
+        default: ""
+permissions:
+  contents: read
+  pull-requests: write
+jobs:
+  bot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      # Inputs reach the shell only through the environment, never interpolated into the script.
+      - env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          PR: ${{ inputs.pr }}
+          ACTION: ${{ inputs.action }}
+          BODY: ${{ inputs.body }}
+          FILE: ${{ inputs.path }}
+          LINE: ${{ inputs.line }}
+        run: |
+          set -euo pipefail
+          case "$ACTION" in
+            approve) gh pr review "$PR" --approve --body "$BODY" ;;
+            review) gh pr review "$PR" --request-changes --body "$BODY" ;;
+            comment)
+              if [ -z "$FILE" ] || [ -z "$LINE" ]; then
+                gh pr comment "$PR" --body "$BODY"
+              else
+                sha=$(gh pr view "$PR" --json headRefOid --jq .headRefOid)
+                gh api "repos/$GH_REPO/pulls/$PR/comments" -f body="$BODY" -f commit_id="$sha" \
+                  -f path="$FILE" -F line="$LINE" -f side=RIGHT
+              fi
+              ;;
+            *) echo "unknown action: $ACTION" >&2; exit 1 ;;
+          esac

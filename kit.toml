@@ -1,0 +1,8 @@
+# The kit's settings, read by toys.py.
+org = "canopy-toys"
+# The toy queue label: never the operator's real one, so a real loop never sees a toy ticket.
+queue_label = "agent-ready-ejones-toy"
+needs_human_label = "needs-human"
+pr_label = "agent"
+# What ci/fetch_check.py fetches when no outage is staged.
+fetch_url = "https://example.com"
