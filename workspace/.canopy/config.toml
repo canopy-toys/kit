@@ -1,0 +1,13 @@
+# The toy workspace's private file: what belongs to this workspace alone, layered over the toy user config.
+
+[tracker]
+labels = ["agent-ready-ejones-toy"]
+
+[serve]
+# Not 8765, the default, so the toy loop and the real one can serve side by side.
+port = 8766
+
+[memory]
+# M50's checks: each tier records, and no run is shown what was recorded until a tier is set to "use".
+ticket_notes = "record"
+proposals = "record"

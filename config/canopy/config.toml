@@ -1,8 +1,5 @@
 # The toy user config: XDG_CONFIG_HOME=~/canopy-toys/config, so it serves only the toy workspace. Kept cheap.
 
-[tracker]
-labels = ["agent-ready-ejones-toy"]
-
 [capacity]
 max_workers = 1
 max_chores = 0
@@ -15,6 +12,8 @@ overseer_cmd = '''env OPENCODE_CONFIG_DIR={definitions_dir} opencode run --agent
 worker_cmd   = '''env OPENCODE_CONFIG_DIR={definitions_dir} opencode run --agent canopy-worker --format json
     --model github-copilot/claude-haiku-5.5 --title={title} {prompt}'''
 split_cmd    = '''env OPENCODE_CONFIG_DIR={definitions_dir} opencode run --agent canopy-splitter --format json
+    --model github-copilot/claude-haiku-5.5 --title={title} {prompt}'''
+plan_cmd     = '''env OPENCODE_CONFIG_DIR={definitions_dir} opencode run --agent canopy-planner --format json
     --model github-copilot/claude-haiku-5.5 --title={title} {prompt}'''
 overseer_timeout_minutes = 15
 worker_timeout_minutes = 30

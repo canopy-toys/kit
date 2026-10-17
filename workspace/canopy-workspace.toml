@@ -18,3 +18,5 @@ branch_prefix = "agent/"
 [policy]
 # Short, so S9 reaches its attempt limit in minutes rather than an hour.
 fix_ci_cooldown_minutes = 5
+# Plan before implementing (M44): every ticket is planned, and waits for the operator to approve its plan.
+plan = "approve"
