@@ -7,6 +7,7 @@
     ./toys.py setup toy-calc     create the repository if needed, seed it once, and apply its settings
     ./toys.py reset toy-calc     back to the seed: PRs closed, agent/ branches gone, main forced, catalog recreated
     ./toys.py reset all
+    ./toys.py reseed toy-calc    replace the seed with the template as it is now, then reset
     ./toys.py install            copy the toy config root and workspace map under ~/canopy-toys, never overwriting
 
 Standard library only. Every GitHub call goes through `gh`.
@@ -36,7 +37,7 @@ HOME = pathlib.Path.home() / "canopy-toys"
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("command", choices=["setup", "reset", "install"])
+    parser.add_argument("command", choices=["setup", "reset", "reseed", "install"])
     parser.add_argument("repo", nargs="?", default="all", help="a toy repository, such as toy-calc, or all")
     args = parser.parse_args()
     if args.command == "install":
@@ -48,6 +49,10 @@ def main() -> int:
             sys.exit(f"no template for {repo}: expected one of {', '.join(toy_repos())}")
         if args.command == "setup":
             setup(repo)
+        elif args.command == "reseed":
+            with ruleset_disabled(f"{ORG}/{repo}"):
+                seed(repo, force=True)
+            reset(repo)
         else:
             reset(repo)
     return 0
@@ -108,6 +113,7 @@ class CatalogIssue:
     scenario: str
     body: str
     autolabel: bool = False
+    fail_ci: bool = False
     blocked_by: list[str] = field(default_factory=list)
 
 
@@ -115,6 +121,7 @@ def create_catalog(repo: str) -> None:
     full = f"{ORG}/{repo}"
     numbers: dict[str, int] = {}
     ids: dict[str, int] = {}
+    fail_branches: list[str] = []
     for item in read_catalog(repo):
         body = item.body
         missing = [slug for slug in item.blocked_by if slug not in numbers]
@@ -136,7 +143,11 @@ def create_catalog(repo: str) -> None:
                 check=False,
             ) is None:
                 log(f"{full}: could not add GitHub's blocked-by dependency; the body line stands alone")
+        if item.fail_ci:
+            fail_branches.append(f"{BRANCH_PREFIX}GH-{created['number']}-*")
         print(f"{item.scenario:<24} {repo:<10} GH-{created['number']:<4} {item.title}")
+    # Every PR for a fail_ci ticket fails ci/branch_check.py. A worker cannot change a repository variable.
+    gh("variable", "set", "TOY_FAIL_BRANCH", "-R", full, "--body", " ".join(fail_branches) or "none")
 
 
 def read_catalog(repo: str) -> list[CatalogIssue]:
@@ -153,14 +164,15 @@ def read_catalog(repo: str) -> list[CatalogIssue]:
                 scenario=meta["scenario"],
                 body=body.strip(),
                 autolabel=meta.get("autolabel", "false") == "true",
+                fail_ci=meta.get("fail_ci", "false") == "true",
                 blocked_by=blocked,
             )
         )
     return items
 
 
-def seed(repo: str) -> None:
-    """Push the template as main's first commit and tag it `seed`."""
+def seed(repo: str, *, force: bool = False) -> None:
+    """Push the template as main's first commit and tag it `seed`; with `force`, in place of the old seed."""
     full = f"{ORG}/{repo}"
     log(f"{full}: seeding")
     with tempfile.TemporaryDirectory() as tmp:
@@ -173,7 +185,7 @@ def seed(repo: str) -> None:
             ["add", "-A"],
             ["commit", "-q", "-m", "Seed"],
             ["tag", SEED_TAG],
-            ["push", "-q", url, "main", f"refs/tags/{SEED_TAG}"],
+            ["push", "-q", *(["--force"] if force else []), url, "main", f"refs/tags/{SEED_TAG}"],
         ):
             # gh's credential helper for this push only, leaving the operator's git config alone.
             helper = ["-c", "credential.helper=", "-c", "credential.helper=!gh auth git-credential"]

@@ -21,3 +21,6 @@ jobs:
       - run: python3 ci/fetch_check.py
         env:
           TOY_FETCH_URL: ${{ vars.TOY_FETCH_URL }}
+      - run: python3 ci/branch_check.py
+        env:
+          TOY_FAIL_BRANCH: ${{ vars.TOY_FAIL_BRANCH }}
